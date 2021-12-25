@@ -1,5 +1,5 @@
-const Issuer = artifacts.require("./VC.sol");
+const Issuer = artifacts.require("./Issuer.sol");
 
 module.exports = function (deployer) {
-  deployer.deploy(VC);
+  deployer.deploy(Issuer);
 };
