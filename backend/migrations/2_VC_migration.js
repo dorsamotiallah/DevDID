@@ -1,5 +1,5 @@
-const Issuer = artifacts.require("./Issuer.sol");
+const Verification = artifacts.require("./verification.sol");
 
 module.exports = function (deployer) {
-  deployer.deploy(Issuer);
+  deployer.deploy(Verification);
 };

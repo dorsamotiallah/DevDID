@@ -2,6 +2,8 @@
 // const crypto = require("crypto");
 // const chai = require("chai");
 
+const fs = require("fs");
+const { type } = require("os");
 var Web3 = require('web3');
 var web3 = new Web3("HTTP://127.0.0.1:7545");
 var acc = 'ccb5feed0f80356a85e7b17f15723f6790d54796e3a531822083a2196b9425ae' ;
@@ -24,12 +26,16 @@ const signTest = async function(){
   console.log("Accounts : " ,  accounts)
   let msg = "Some data"
 
+  
   let prefix = "\x19Ethereum Signed Message:\n" + msg.length
-  let msgHash1 = web3.utils.sha3(prefix+msg)
+  //let msgHash1 = web3.utils.sha3(prefix+msg)
+  let msgHash1 = keccak256(prefix+msg);
+  
 
   console.log("Account 0 : " , accounts[0] )
+  //var private_key = "0xa7ec9ff7116beda67e841453d3de8814d39526b7908023bf020661b69725f3fc";
 
-  let sig1 = await web3.eth.sign(msg, accounts[0],function (err , res) {
+  let sig1 = await web3.eth.sign(msgHash1,accounts[0],function (err , res) {
     if (err) {
       console.log('Error : ' , err)
     }
@@ -40,6 +46,26 @@ const signTest = async function(){
 
     return [msg,sig1]
 }
+
+/*
+var Verification_json = Verification_json = require("/Users/dorsa/Desktop/lessons/software engineering/project /DevDID/backend/build/contracts/Verification.json");
+
+const verif = async function (input) {
+
+  console.log("Verif Input : " , input);
+
+  var contract_address = Verification_json['networks']['5777']['address'];//is it 5777 in all cases ?
+  var abi = Verification_json['abi'];
+
+  var verf_contract = new web3.eth.Contract(abi,contract_address);
+
+  let public_key = await verf_contract.methods.recover(web3.utils.asciiToHex(input[0]),input[1]).call();
+
+  console.log("sender : ", public_key);
+
+}
+*/
+
 
 const verif = async function (input) {
 
@@ -60,16 +86,24 @@ const verif = async function (input) {
 
 }
 
-let res = signTest() 
-// console.log("res : " ,  res)
-res.then(function(result) {
-  console.log(result) // "Some User token"
-  verif(result)
+
+
+var msg;
+var sign;
+
+let sign_res = signTest() 
+sign_res.then(function(result) {
+  //console.log("msg and signiture: ",result);
+  msg = result[0];
+  sign = result[1];
+  verif([msg,sign]);
 })
-// let a = verif(res)
 
 
-  
+
+
+
+
 
 
   
