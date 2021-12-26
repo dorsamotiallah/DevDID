@@ -1,37 +1,20 @@
-// const PoE = artifacts.require("./Issuer.sol");
-// const crypto = require("crypto");
-// const chai = require("chai");
-
+const { resolve } = require("dns");
 const fs = require("fs");
 const { type } = require("os");
 var Web3 = require('web3');
 var web3 = new Web3("HTTP://127.0.0.1:7545");
-var acc = 'ccb5feed0f80356a85e7b17f15723f6790d54796e3a531822083a2196b9425ae' ;
-var sign = "";
-var message = "message1";
-console.log('input : ',message)
-
-
-// hash
-  const messageHashed = web3.utils.sha3( message )
-  console.log('message : ', messageHashed)
-// sign
-
 
 
 var Verification_json = Verification_json = require("/Users/dorsa/Desktop/lessons/software engineering/project /DevDID/backend/build/contracts/Verification.json");
 var contract_address = Verification_json['networks']['5777']['address'];//is it 5777 in all cases ?
 var abi = Verification_json['abi'];
 var verf_contract = new web3.eth.Contract(abi,contract_address);
-console.log("abi: ",abi);
+//console.log("abi: ",abi);
 
-const signTest = async function(msg){
 
-  let accounts = await web3.eth.getAccounts();
 
-  console.log("accounts : ",accounts);
+const signTest = async function(msg,account){
 
-  //console.log("here");
 
   let hashedmessage = await verf_contract.methods.getHash(msg).call();
 
@@ -41,7 +24,7 @@ const signTest = async function(msg){
 
   //console.log("sign : ",prefixed_hashed_msg);
 
-  let signature = await web3.eth.sign(hashedmessage,accounts[0],function (err , res) {
+  let signature = await web3.eth.sign(hashedmessage,account,function (err , res) {
     if (err) {
       console.log('sigature Error : ' , err)
     }
@@ -50,7 +33,10 @@ const signTest = async function(msg){
     }
   });
 
-  return [prefixed_hashed_msg,signature];
+  return new Promise(resolve => {
+    resolve([prefixed_hashed_msg,signature]);
+  });
+
 }
 
 
@@ -68,105 +54,102 @@ const verif = async function (input) {
 
   console.log("sender : ", public_key);
 
+
+  return new Promise(resolve => {
+    resolve(public_key);
+  });
+
+}
+
+
+
+async function issuer (raw_vc,account){
+
+  let sign_res = await signTest(raw_vc);//[prefixed_hashed_msg,signature]
+  //console.log("hashedmsg and signiture: ",sign_res);
+  var issued_vc = {};
+  issued_vc["issuer public_key"] = account; 
+  issued_vc["meta data"] = raw_vc;
+  issued_vc["prefixed hashed message"] = sign_res[0];
+  issued_vc["signature"] = sign_res[1];
+  console.log("issued vc : ",issued_vc);
+
+  return new Promise(resolve => {
+    resolve(issued_vc);
+  });
+
 }
 
 
-/*
-const verif = async function (input) {
 
-  console.log("Input : " , input)
+async function holder (issued_vc,account){
+  let sign_res = await signTest(issued_vc);//[prefixed_hashed_msg,signature]
+  //console.log("hashedmsg and signiture: ",sign_res);
+  var holder_vc = {};
+  holder_vc["issuer public_key"] = issued_vc["issuer public_key"];
+  holder_vc["meta data"] = issued_vc["meta data"];
+  holder_vc["issuer prefixed hashed vc"] = issued_vc["prefixed hashed message"];
+  holder_vc["issuer signature"] = issued_vc["signature"];
+  holder_vc["holder public_key"] = account;
+  holder_vc["holder prefixed hashed vc"] = sign_res[0];
+  holder_vc["holder signature"] = sign_res[1];
+  console.log("holder vc : ",holder_vc);
 
-  let whoSigned1 = await web3.eth.accounts.recover(input[0], input[1],function (err , res) {
-    if (err) {
-      console.log('Error1 : ' , err)
-    }
-    else {
-      console.log('Success1 : ' , res)
-    }
-  }
-    
-    );
-
-    console.log("sender : ", whoSigned1)
+  return new Promise(resolve => {
+    resolve(holder_vc);
+  });
 
 }
-*/
 
-
-
-var msg = "my message";
-var sign;
-
-let sign_res = signTest(msg) 
-sign_res.then(function(result) {
-  //console.log("hashedmsg and signiture: ",result);
-  verif(result);
-})
-
-
-
-
-
-
-
-
+async function verifier(holder_vc){
   
+  var issuer_public_key = await verif([holder_vc["issuer prefixed hashed vc"],holder_vc["issuer signature"]]);
+
+  var holder_public_key = await verif([holder_vc["holder prefixed hashed vc"],holder_vc["holder signature"]]);
+
+  if(issuer_public_key === holder_vc["issuer public_key"]){
+    console.log("issuer successfully verified");
+  }
+
+  if(holder_public_key === holder_vc["holder public_key"]){
+    console.log("holder successfully verified");
+  }
+
+}
+
+async function getAccounts(){
+  let accounts = await web3.eth.getAccounts();
+
+  console.log("accounts : ",accounts);
+
+  return new Promise(resolve => {
+    resolve([accounts[0],accounts[1],accounts[2]]);
+  });
+}
 
 
-// const id1 = 1;
-// const address1 = '0xc06C96FCFdBB6A20C811c8D1d751d4b11D5AD458';
-// const message1 = "Some document";
-// const docHash1 = sha256AsHexString(message1); // Creating hashes
 
-// function sha256AsHexString(doc) {
-//     return "0x" + crypto.createHash("sha256").update(doc, "utf8").digest("hex");
-// }
+async function main(){
+  var issuer_account ;
+  var holder_account ;
+  var verifier_account;
 
-// // Signing The VC's
-// web3.eth.sign(message1,address1,function(err , result) {
-//     console.log("Event :")
-//     console.log(result,err)
-// })
+  var accounts = await getAccounts();
 
+  issuer_account = accounts[0];
+  holder_account = accounts[1];
+  verifier_account = accounts[2];
 
-// // Finally testing the contract to deploy 
-// var abi = [
-//     {
-//       inputs: [],
-//       stateMutability: 'nonpayable',
-//       type: 'constructor',
-//       constant: undefined,
-//       payable: undefined
-//     },
-//     {
-//       anonymous: false,
-//       inputs: [Array],
-//       name: 'HashSaved',
-//       type: 'event',
-//       constant: undefined,
-//       payable: undefined,
-//       signature: '0xdd86a2b7b2d8557a93551c3f578adcc374ed780b8abf22f822d841b37a6cf290'
-//     },
-//     {
-//       inputs: [Array],
-//       name: 'mapTheVC',
-//       outputs: [],
-//       stateMutability: 'nonpayable',
-//       type: 'function',
-//       constant: undefined,
-//       payable: undefined,
-//       signature: '0xff1c8558'
-//     }
-//   ]
+  console.log(issuer_account);
+  console.log(holder_account);
+  console.log(verifier_account);
 
-// var contract = new web3.eth.Contract(abi,"0x5279E7Dc0F6650C7064a8716E7c7D43F76A179aE")
+  var raw_vc = {};
+  
+  var issuer_vc = issuer("raw_vc",issuer_account);
 
+  var holder_vc = holder (issuer_vc,holder_account);
 
-// var event = contract.methods.mapTheVC(function(error, result) {
-//     console.log("Function :")
-//     if (!error)
-//         console.log(result);
-    
-// });
+}
 
-// contract.events.HashSaved(function(error, event){ console.log(event); })
+main()
