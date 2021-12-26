@@ -65,7 +65,7 @@ const verif = async function (input) {
 
 async function issuer (raw_vc,account){
 
-  let sign_res = await signTest(raw_vc);//[prefixed_hashed_msg,signature]
+  let sign_res = await signTest(raw_vc,account);//[prefixed_hashed_msg,signature]
   //console.log("hashedmsg and signiture: ",sign_res);
   var issued_vc = {};
   issued_vc["issuer public_key"] = account; 
@@ -83,7 +83,7 @@ async function issuer (raw_vc,account){
 
 
 async function holder (issued_vc,account){
-  let sign_res = await signTest(issued_vc);//[prefixed_hashed_msg,signature]
+  let sign_res = await signTest(issued_vc,account);//[prefixed_hashed_msg,signature]
   //console.log("hashedmsg and signiture: ",sign_res);
   var holder_vc = {};
   holder_vc["issuer public_key"] = issued_vc["issuer public_key"];
@@ -117,15 +117,7 @@ async function verifier(holder_vc){
 
 }
 
-async function getAccounts(){
-  let accounts = await web3.eth.getAccounts();
 
-  console.log("accounts : ",accounts);
-
-  return new Promise(resolve => {
-    resolve([accounts[0],accounts[1],accounts[2]]);
-  });
-}
 
 
 
@@ -134,21 +126,23 @@ async function main(){
   var holder_account ;
   var verifier_account;
 
-  var accounts = await getAccounts();
+  var accounts = await web3.eth.getAccounts();
 
   issuer_account = accounts[0];
   holder_account = accounts[1];
   verifier_account = accounts[2];
 
-  console.log(issuer_account);
-  console.log(holder_account);
-  console.log(verifier_account);
+  console.log("issuer public key : ",issuer_account);
+  console.log("holder public key : ",holder_account);
+  console.log("verfier public key : ",verifier_account);
 
   var raw_vc = {};
   
-  var issuer_vc = issuer("raw_vc",issuer_account);
+  var issuer_vc = await issuer("raw_vc",issuer_account);
 
-  var holder_vc = holder (issuer_vc,holder_account);
+  var holder_vc = await holder (issuer_vc,holder_account);
+
+  await verifier(holder_vc);
 
 }
 
