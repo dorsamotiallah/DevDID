@@ -11,6 +11,7 @@ var sign = "";
 var message = "message1";
 console.log('input : ',message)
 
+
 // hash
   const messageHashed = web3.utils.sha3( message )
   console.log('message : ', messageHashed)
@@ -18,55 +19,59 @@ console.log('input : ',message)
 
 
 
-const signTest = async function(){
+var Verification_json = Verification_json = require("/Users/dorsa/Desktop/lessons/software engineering/project /DevDID/backend/build/contracts/Verification.json");
+var contract_address = Verification_json['networks']['5777']['address'];//is it 5777 in all cases ?
+var abi = Verification_json['abi'];
+var verf_contract = new web3.eth.Contract(abi,contract_address);
+console.log("abi: ",abi);
 
-  // Using eth.sign()
+const signTest = async function(msg){
 
   let accounts = await web3.eth.getAccounts();
-  console.log("Accounts : " ,  accounts)
-  let msg = "Some data"
 
-  
-  let prefix = "\x19Ethereum Signed Message:\n" + msg.length
-  //let msgHash1 = web3.utils.sha3(prefix+msg)
-  let msgHash1 = keccak256(prefix+msg);
-  
+  console.log("accounts : ",accounts);
 
-  console.log("Account 0 : " , accounts[0] )
-  //var private_key = "0xa7ec9ff7116beda67e841453d3de8814d39526b7908023bf020661b69725f3fc";
+  //console.log("here");
 
-  let sig1 = await web3.eth.sign(msgHash1,accounts[0],function (err , res) {
+  let hashedmessage = await verf_contract.methods.getHash(msg).call();
+
+  //console.log("hashnsg : ",hashedmessage);
+
+  let prefixed_hashed_msg = await verf_contract.methods.getEthSignedHash(hashedmessage).call();
+
+  //console.log("sign : ",prefixed_hashed_msg);
+
+  let signature = await web3.eth.sign(hashedmessage,accounts[0],function (err , res) {
     if (err) {
-      console.log('Error : ' , err)
+      console.log('sigature Error : ' , err)
     }
     else {
-      console.log('Success : ' , res)
+      console.log('Signature Success : ' , res)
     }
   });
 
-    return [msg,sig1]
+  return [prefixed_hashed_msg,signature];
 }
 
-/*
-var Verification_json = Verification_json = require("/Users/dorsa/Desktop/lessons/software engineering/project /DevDID/backend/build/contracts/Verification.json");
 
 const verif = async function (input) {
 
   console.log("Verif Input : " , input);
+  var signature = input[1];
+  var r = signature.slice(0, 66);
+  var s = "0x" + signature.slice(66, 130);
+  var v = "0x" + signature.slice(130, 132);
+  v = web3.utils.toDecimal(v);
+  v = v + 27;
 
-  var contract_address = Verification_json['networks']['5777']['address'];//is it 5777 in all cases ?
-  var abi = Verification_json['abi'];
-
-  var verf_contract = new web3.eth.Contract(abi,contract_address);
-
-  let public_key = await verf_contract.methods.recover(web3.utils.asciiToHex(input[0]),input[1]).call();
+  let public_key = await verf_contract.methods.verify(input[0],r,s,v).call();
 
   console.log("sender : ", public_key);
 
 }
-*/
 
 
+/*
 const verif = async function (input) {
 
   console.log("Input : " , input)
@@ -85,18 +90,17 @@ const verif = async function (input) {
     console.log("sender : ", whoSigned1)
 
 }
+*/
 
 
 
-var msg;
+var msg = "my message";
 var sign;
 
-let sign_res = signTest() 
+let sign_res = signTest(msg) 
 sign_res.then(function(result) {
-  //console.log("msg and signiture: ",result);
-  msg = result[0];
-  sign = result[1];
-  verif([msg,sign]);
+  //console.log("hashedmsg and signiture: ",result);
+  verif(result);
 })
 
 

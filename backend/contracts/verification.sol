@@ -3,59 +3,28 @@ pragma solidity >=0.4.22 <0.9.0;
 
 
 
-/*
- * Based upon ECDSA library from OpenZeppelin Solidity
- * https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/cryptography/ECDSA.sol
- */
-
 contract Verification {
-
-  /*
-   * @dev Recover signer address from a message by using their signature
-   * @param hash bytes32 message, the hash is the signed message. What is recovered is the signer address.
-   * @param signature bytes signature, the signature is generated using web3.eth.sign()
-   */
-
-
-  function recover(bytes32 hash, bytes memory signature)
-    public
-    pure
-    returns (address)
-  {
-    //keccak256(abi.encodePacked(hash));
-    //keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash)
-    bytes32 r;
-    bytes32 s;
-    uint8 v;
-
-    // Check the signature length
-    if (signature.length != 65) {
-      return (address(0));
+  
+    // use this function to get the hash of any string
+    function getHash(string memory str) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(str));
     }
-
-    // Divide the signature in r, s and v variables
-    // ecrecover takes the signature parameters, and the only way to get them
-    // currently is to use assembly.
-    // solium-disable-next-line security/no-inline-assembly
-    assembly {
-      r := mload(add(signature, 0x20))
-      s := mload(add(signature, 0x40))
-      v := byte(0, mload(add(signature, 0x60)))
+    
+    
+    // take the keccak256 hashed message from the getHash function above and input into this function
+    // this function prefixes the hash above with \x19Ethereum signed message:\n32 + hash
+    // and produces a new hash signature
+    function getEthSignedHash(bytes32 _messageHash) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash));
     }
-
-    // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
-    if (v < 27) {
-      v += 27;
+    
+    
+    // input the getEthSignedHash results and the signature hash results
+    // the output of this function will be the account number that signed the original message
+    function verify(bytes32 _ethSignedMessageHash, bytes32 r, bytes32 s, uint8 v) public pure returns (address) {
+        return ecrecover(_ethSignedMessageHash, v, r, s);
     }
-
-    // If the version is correct return the signer address
-    if (v != 27 && v != 28) {
-      return (address(0));
-    } else {
-      // solium-disable-next-line arg-overflow
-      return ecrecover(hash, v, r, s);
-    }
-  }
   
  
 }
+
