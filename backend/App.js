@@ -3,6 +3,8 @@ const fs = require("fs");
 const { type } = require("os");
 var Web3 = require('web3');
 var web3 = new Web3("HTTP://127.0.0.1:7545");
+var express = require('express');
+var app = express();
 
 // Retrieve ABI & Contract address from Smart contract JSON
 var Verification_json = Verification_json = require("D:/Education/University/TERM7/Narm1/Project/Development/Project/DevDID/backend/build/contracts/Verification.json");
@@ -11,6 +13,16 @@ var abi = Verification_json['abi'];
 // Connecting to smart contract
 var verf_contract = new web3.eth.Contract(abi,contract_address);
 console.log("\nabi: ",abi);
+
+//setting role's accounts
+var accounts = await web3.eth.getAccounts();
+var issuer_account = accounts[0];
+var holder_account = accounts[1];
+var verifier_account = accounts[2];
+
+//holders storage
+var vcs = [];
+var vc_request = [];
 
 
 // SIGNING
@@ -135,7 +147,7 @@ async function verifier(holder_vc){
 
 }
 
-
+/*
 async function main(){
   var issuer_account ;
   var holder_account ;
@@ -166,3 +178,17 @@ async function main(){
 }
 
 main()
+*/
+
+app.post('/pure_meta_data',async function(req,res){
+  var meta_data = JSON.parse(req.body);
+  var issuer_vc = await issuer(meta_data,issuer_account);
+  var holder_vc = await holder (issuer_vc,holder_account);
+  vcs.push(holder_vc);
+})
+
+var server = app.listen(8081, function () {
+  var host = server.address().address
+  var port = server.address().port
+  console.log("Example app listening at http://%s:%s", host, port)
+})
