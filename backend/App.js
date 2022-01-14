@@ -14,11 +14,17 @@ var abi = Verification_json['abi'];
 var verf_contract = new web3.eth.Contract(abi,contract_address);
 console.log("\nabi: ",abi);
 
+async function accounts (){
 //setting role's accounts
-var accounts = await web3.eth.getAccounts();
-var issuer_account = accounts[0];
-var holder_account = accounts[1];
-var verifier_account = accounts[2];
+  var accounts = await web3.eth.getAccounts();
+  var issuer_account = accounts[0];
+  var holder_account = accounts[1];
+  var verifier_account = accounts[2];
+
+  return new Promise(resolve => {
+    resolve([issuer_account,holder_account,verifier_account]);
+  });
+}
 
 //holders storage
 var vcs = [];
@@ -181,9 +187,10 @@ main()
 */
 
 app.post('/pure_meta_data',async function(req,res){
+  var accs = await accounts();
   var meta_data = JSON.parse(req.body);
-  var issuer_vc = await issuer(meta_data,issuer_account);
-  var holder_vc = await holder (issuer_vc,holder_account);
+  var issuer_vc = await issuer(meta_data,accs[0]);
+  var holder_vc = await holder (issuer_vc,accs[1]);
   vcs.push(holder_vc);
 })
 
