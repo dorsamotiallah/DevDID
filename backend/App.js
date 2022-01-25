@@ -197,12 +197,24 @@ main()
 */
 app.use(bodyParser.json());
 
+var cors = require('cors');
 
-app.post('/sign_by_issuer',async function(req,res){
+var corsOptions = {
+  // origin: '*',
+  origin: 'null',
+  // origin: 'http://localhost',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+
+
+app.use(cors());
+
+
+app.post('/sign_by_issuer',cors(corsOptions),async function(req,res){
   let accs = await accounts();
 
   console.log("Accs :" , accs);
-  console.log("Body : ",req.body);
+  console.log("Body : ",req);
   var meta_data = req.body;
   var issuer_vc = await issuer(meta_data,accs[0]);
   res.json(issuer_vc);
@@ -210,7 +222,7 @@ app.post('/sign_by_issuer',async function(req,res){
 
 })
 
-app.post('/sign_by_holder',async function(req,res){
+app.post('/sign_by_holder',cors(corsOptions),async function(req,res){
   let accs = await accounts();
   
   console.log("Accs :" , accs);
@@ -224,7 +236,8 @@ app.post('/sign_by_holder',async function(req,res){
 
 })
 
-app.post('/verification',async function(req,res){
+
+app.post('/verification',cors(corsOptions),async function(req,res){
   let accs = await accounts();
   
   console.log("Accs :" , accs);
@@ -237,11 +250,8 @@ app.post('/verification',async function(req,res){
 
 })
 
-
-
-
 var server = app.listen(8081, function () {
   var host = server.address().address
   var port = server.address().port
-  console.log("Example app listening at http://%s:%s", host, port)
+  console.log("Server is listening at http://Localhost:%s", port)
 })
